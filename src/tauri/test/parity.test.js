@@ -37,7 +37,7 @@ function loadPreload() {
     if (name !== 'electron') throw new Error(`the preload requires ${name}`)
     return { contextBridge, ipcRenderer }
   }
-  new Function('require', 'process', read('../../desktop/src/preload/index.js'))(fakeRequire, process)
+  new Function('require', 'process', read('../../agentrq/desktop/src/preload/index.js'))(fakeRequire, process)
   return electron
 }
 
@@ -288,7 +288,7 @@ describe('the Rust side serves what the bridge calls', () => {
   ]
 
   it('has one command per channel the preload invokes, plus the guest one and the bridge\'s own', () => {
-    const preload = read('../../desktop/src/preload/index.js')
+    const preload = read('../../agentrq/desktop/src/preload/index.js')
     const channels = [...preload.matchAll(/invoke\(\s*'(agentrq:[\w:-]+)'/g)].map((m) => commandOf(m[1]))
     expect(defined).toEqual([...new Set([...channels, ...GUEST_ONLY, ...BRIDGE_ONLY])].sort())
     const net = read('../src/bridge/net.js')
@@ -498,12 +498,11 @@ describe('no capability reaches a side panel guest', () => {
       ...readdirSync(here('../scripts/')).filter((name) => CONFIG.test(name)).map((name) => `scripts/${name}`),
     ]
     const runners = [
-      ...readdirSync(here('../../.github/workflows/')).map((name) => `../../.github/workflows/${name}`),
+      ...readdirSync(here('../../../.github/workflows/')).map((name) => `../../../.github/workflows/${name}`),
       ...filesUnder('../scripts/').map((file) => `../scripts/${file}`),
       '../package.json',
-      '../../Makefile',
     ]
-    expect(runners).toContain('../../.github/workflows/desktop-release.yml')
+    expect(runners).toContain('../../../.github/workflows/release.yml')
     const inline = []
     for (const runner of runners) {
       for (const config of configsGiven(commandLines(runner))) {

@@ -944,7 +944,7 @@ pub(crate) mod tests {
         *lock(&services.server) = "http://127.0.0.1:9".into();
         let host = host(real_launch(dir.path()), dir.path(), services.clone());
 
-        let examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/extensions");
+        let examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../agentrq/examples/extensions");
         let installed = host
             .call(
                 "installLocal",

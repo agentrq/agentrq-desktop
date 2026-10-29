@@ -18,8 +18,9 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const TAURI_ROOT = join(__dirname, '..')
-const REPO_ROOT = join(TAURI_ROOT, '..')
-const SOURCE_ICON = join(REPO_ROOT, 'frontend', 'public', 'large-icon.png')
+// The agentrq submodule beside this folder: the frontend lives there.
+const AGENTRQ_ROOT = join(TAURI_ROOT, '..', 'agentrq')
+const SOURCE_ICON = join(AGENTRQ_ROOT, 'frontend', 'public', 'large-icon.png')
 const OUTPUT_DIR = join(TAURI_ROOT, 'src-tauri', 'icons')
 
 export async function generateIcons() {

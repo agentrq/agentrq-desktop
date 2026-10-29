@@ -5,8 +5,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { SEALED_PREFIX, createVault } from '../src/ext-host/vault.js'
-import { createConfigStore } from '../../desktop/src/main/extensions/config.js'
-import { createStorageStore } from '../../desktop/src/main/extensions/storage.js'
+import { createConfigStore } from '../../agentrq/desktop/src/main/extensions/config.js'
+import { createStorageStore } from '../../agentrq/desktop/src/main/extensions/storage.js'
 
 /** The shell's keychain, as the wire answers for it: reversible, and countable. */
 function shell({ available = true, refuse = false, openFails = false, vaultFails = false } = {}) {

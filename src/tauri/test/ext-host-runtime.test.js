@@ -12,9 +12,9 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 
 import { AUTH_WINDOW_MS, createExtensionHost, createProfileFetch } from '../src/ext-host/runtime.js'
 import { SEALED_PREFIX } from '../src/ext-host/vault.js'
-import { REDIRECT_URI } from '../../desktop/src/main/extensions/supervisor-auth.js'
+import { REDIRECT_URI } from '../../agentrq/desktop/src/main/extensions/supervisor-auth.js'
 
-const EXAMPLES = fileURLToPath(new URL('../../examples/extensions/', import.meta.url))
+const EXAMPLES = fileURLToPath(new URL('../../agentrq/examples/extensions/', import.meta.url))
 const SERVER = 'http://server.test'
 
 const json = (body, status = 200, headers = {}) => ({

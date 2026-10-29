@@ -98,7 +98,7 @@ pub fn icon_search_paths(renderer_root: &Path, project_root: &Path) -> [PathBuf;
         // A dev run serves the renderer from the dev server and never builds
         // it, so the path above does not exist there. Fall back to the source
         // asset the build would have copied: the same file, one step earlier.
-        join_normalized(project_root, &["..", "frontend", "public", ICON_FILENAME]),
+        join_normalized(project_root, &["..", "agentrq", "frontend", "public", ICON_FILENAME]),
     ]
 }
 
@@ -206,14 +206,14 @@ mod tests {
     }
 
     fn source() -> PathBuf {
-        PathBuf::from("/frontend/public").join(ICON_FILENAME)
+        PathBuf::from("/agentrq/frontend/public").join(ICON_FILENAME)
     }
 
     /// A file of the Electron app, or `None` (with a note) once `desktop/` is
     /// gone after the cutover, so these guards retire with it instead of failing.
     fn repo_path(relative: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../..")
+            .join("../../agentrq")
             .join(relative)
     }
 

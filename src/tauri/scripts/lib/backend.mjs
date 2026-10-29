@@ -20,7 +20,7 @@ import { join, resolve } from 'node:path'
 
 import { freePort, waitFor } from './webdriver.mjs'
 
-const REPO = resolve(import.meta.dirname, '../../..')
+const REPO = resolve(import.meta.dirname, '../../../agentrq')
 const SERVER_DIR = join(REPO, 'backend/cmd/server')
 const EXE = process.platform === 'win32' ? 'agentrq-server.exe' : 'agentrq-server'
 

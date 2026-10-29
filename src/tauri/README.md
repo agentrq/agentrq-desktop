@@ -1,13 +1,13 @@
 # AgentRQ desktop on Tauri (preview)
 
 Electron is still the default desktop app. This is the Tauri build beside it,
-with the same UI: its renderer is `desktop/src/renderer`, built from
-`frontend/src`, and a `window.agentrq` bridge of its own stands in for
+with the same UI: its renderer is agentrq's `desktop/src/renderer`, built from its
+`frontend/src` (both in the `src/agentrq` submodule), and a `window.agentrq` bridge of its own stands in for
 Electron's preload. The rules of the code are in
-[`docs/agents/desktop-tauri.md`](../docs/agents/desktop-tauri.md); what is
+[`docs/agents/desktop-tauri.md`](../../docs/agents/desktop-tauri.md); what is
 checked on which OS is in
-[the parity checklist](../docs/agents/desktop-tauri-parity.md); the user's view
-is the "Preview: Tauri build" section of [`docs/DESKTOP.md`](../docs/DESKTOP.md#preview-tauri-build).
+[the parity checklist](../../docs/agents/desktop-tauri-parity.md); the user's view
+is the "Preview: Tauri build" section of [agentrq's `docs/DESKTOP.md`](https://github.com/agentrq/agentrq/blob/main/docs/DESKTOP.md#preview-tauri-build).
 
 ## Layout
 
@@ -25,7 +25,7 @@ is the "Preview: Tauri build" section of [`docs/DESKTOP.md`](../docs/DESKTOP.md#
 
 ### Prerequisites per OS
 
-- **Linux**: install the webview and build packages matching `.github/workflows/desktop-tauri.yml`:
+- **Linux**: install the webview and build packages matching `.github/workflows/test.yml`:
   ```sh
   sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev webkit2gtk-driver xvfb xclip dbus-x11 python3-gi
   ```
@@ -36,24 +36,31 @@ is the "Preview: Tauri build" section of [`docs/DESKTOP.md`](../docs/DESKTOP.md#
 - **Tools**:
   - `cargo install cargo-llvm-cov` (for `npm run coverage:rust`)
   - `cargo install tauri-driver --locked --version 2.1.0` (for `npm run verify`)
-  - Go toolchain (for `npm run verify`, which builds a temporary scratch backend from `backend/`)
+  - Go toolchain (for `npm run verify`, which builds a temporary scratch backend from `src/agentrq/backend/`)
 
 ### Installing dependencies
 
 ```sh
-(cd frontend && npm ci)  # the renderer is built from frontend/src
-cd desktop-tauri
+git submodule update --init   # src/agentrq, pinned
+(cd src/agentrq/frontend && npm ci)  # the renderer is built from its frontend/src
+cd src/tauri
 npm ci
 ```
+
+To build against a newer agentrq, move the pin:
+`git -C src/agentrq fetch && git -C src/agentrq checkout <commit>`, then commit
+`src/agentrq`. A change there to `frontend/`, `desktop/src/renderer`,
+`desktop/src/preload` or `desktop/src/main/extensions` can break this build, so
+bump it in a pull request and let CI run.
 
 ## Running it
 
 ```sh
-make desktop-tauri-dev   # or, in desktop-tauri/: npm run dev
+npm run dev   # in src/tauri/
 ```
 
 That starts the renderer's Vite on port 5175 and `tauri dev` with it. It does
-not start a server: run `make dev` in another terminal for one on
+not start a server: run `make dev` in an agentrq checkout for one on
 `http://localhost:3000`, or pick any server on the connection screen.
 `AGENTRQ_SERVER_URL` locks the connection to one server, as in Electron.
 
@@ -65,7 +72,7 @@ can be installed and run side by side.
 ## Building it
 
 ```sh
-make desktop-tauri       # or: npm run build
+npm run build
 ```
 
 `npm run build` builds the renderer and then the bundles for this OS: `.deb`
@@ -84,14 +91,14 @@ npm run test:sidecar -- <node>   # the examples on the app's Node.js, through th
 ```
 
 `test:sidecar` takes the `node` the app downloaded (`<data dir>/bin/node`) and
-needs `npm run build:ext-host` first, and `npm ci` in `frontend/`: Electron's
+needs `npm run build:ext-host` first, and `npm ci` in `src/agentrq/frontend/`: Electron's
 examples import a frontend composable, which imports `vue`.
 
 `src-tauri` needs the built renderer (`npm run build:renderer`), because
 `tauri::generate_context!` reads it at compile time. `coverage:rust` needs
 `cargo-llvm-cov` (`cargo install cargo-llvm-cov`).
 
-The gates, all in CI (the `Desktop App (Tauri)` workflow, on Linux, macOS and
+The gates, all in CI (the `Test` workflow, on Linux, macOS and
 Windows):
 
 - **JS: 100% of lines, functions, branches and statements** over `src/`, except
@@ -104,9 +111,9 @@ Windows):
   new rule goes in a gated file with its test, never in that list.
 - **`cargo fmt --check` and `cargo clippy -D warnings`** on both crates, and on
   `src-tauri` once more as a release build, the configuration that ships.
-- **Versions in lockstep**: `node desktop/scripts/check-versions.mjs` holds
-  `package.json`, both `Cargo.toml` files and `tauri.conf.json` to the rest of
-  the repo. `node desktop/scripts/copyright.mjs` checks every file's header.
+- **Versions agree**: `node scripts/check-versions.mjs` holds `package.json`,
+  both `Cargo.toml` files and `tauri.conf.json` to one version, and a release
+  tag to it.
 - **Screenshots**: CI starts the release build in light and dark on each OS and
   checks the window's background colour (`test/e2e/pixel.mjs`). The pictures
   are uploaded as `chrome-shots-<OS>`.
@@ -116,13 +123,13 @@ Windows):
 `scripts/verify-e2e.mjs`, `verify-connection.mjs`, `verify-markdown-links.mjs`,
 `verify-side-panel.mjs`, `verify-webmcp.mjs`, and `verify-ui-telemetry.mjs`
 are the Tauri twins of the Electron scripts of the same names in
-`desktop/scripts/`, with the same checks. They run the real **debug build**
+agentrq's `desktop/scripts/`, with the same checks. They run the real **debug build**
 under `tauri-driver` (WebDriver), so nothing in the shell is stood in for,
 except what must not happen on your machine (the system opener and the file
 manager, see `scripts/lib/shell-stub.mjs`).
 
 You need `tauri-driver` (`cargo install tauri-driver --locked --version 2.1.0`, the version CI uses), Go (the
-scratch backend is built from `backend/`, read only, into a temp folder), and a
+scratch backend is built from `src/agentrq/backend/`, read only, into a temp folder), and a
 native WebDriver:
 
 | OS | Native driver | Notes |
@@ -132,7 +139,7 @@ native WebDriver:
 | macOS | none | WKWebView has no WebDriver. Those rows of the parity checklist are manual. |
 
 ```sh
-cd desktop-tauri
+cd src/tauri
 npm ci
 npm run build:debug      # the app the scripts launch; rebuild after a change
 npm run verify           # all verify scripts, or individual: npm run verify:e2e, etc.

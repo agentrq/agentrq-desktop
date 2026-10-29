@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-import { drawerFrameCSP, drawerFrameDocument } from '../../desktop/src/main/extensions/drawer-frame.js'
+import { drawerFrameCSP, drawerFrameDocument } from '../../agentrq/desktop/src/main/extensions/drawer-frame.js'
 
 /** The shell's copy of the frame document (`core/src/drawer_frame.rs`). */
 const TEMPLATE = readFileSync(new URL('../core/src/drawer_frame.html', import.meta.url), 'utf8')

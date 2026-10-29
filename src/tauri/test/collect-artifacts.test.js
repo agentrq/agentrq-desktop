@@ -14,7 +14,7 @@ const FIXTURES = fileURLToPath(new URL('./fixtures/tauri-bundles/', import.meta.
 const VERSION = JSON.parse(
   fs.readFileSync(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8')
 ).version
-const RELEASE = 'https://github.com/agentrq/agentrq/releases/download/v0.13.4'
+const RELEASE = 'https://github.com/agentrq/agentrq-desktop/releases/download/v0.13.4'
 
 let tmp
 beforeEach(() => {
@@ -249,7 +249,7 @@ describe('run', () => {
   it('writes latest-tauri.json from the release signatures', () => {
     const { lines, log } = rig()
     const dir = releaseSigs(path.join(tmp, 'sigs'))
-    const code = run(['--manifest', '--dir', dir, '--tag', 'v0.13.4'], { log, env: { GITHUB_REPOSITORY: 'agentrq/agentrq' } })
+    const code = run(['--manifest', '--dir', dir, '--tag', 'v0.13.4'], { log, env: { GITHUB_REPOSITORY: 'agentrq/agentrq-desktop' } })
     expect(code).toBe(0)
     const text = fs.readFileSync(path.join(dir, 'latest-tauri.json'), 'utf8')
     const { pub_date: pubDate } = JSON.parse(text)

@@ -1,8 +1,8 @@
-# Tauri desktop app (`desktop-tauri/`, preview)
+# Tauri desktop app (`src/tauri/`, preview)
 
-> Read before changing anything under `desktop-tauri/`. It renders desktop's
-> renderer unchanged, so [the desktop note](desktop.md) applies here too. How to
-> build, test and verify it is in [`desktop-tauri/README.md`](../../desktop-tauri/README.md);
+> Read before changing anything under `src/tauri/`. It renders desktop's
+> renderer unchanged, so [the desktop note](https://github.com/agentrq/agentrq/blob/main/docs/agents/desktop.md) applies here too. How to
+> build, test and verify it is in [`src/tauri/README.md`](../../src/tauri/README.md);
 > what is checked on which OS is in [the parity checklist](desktop-tauri-parity.md).
 
 ## Where code goes, and the gates
@@ -15,8 +15,8 @@
   per generic instance, so keep closures out of its commands. An async command whose
   arguments cannot fail (`AppHandle`, `Webview`) leaves its attribute line uncovered:
   take a `State`, which fails when unmanaged, and test that.
-- **`make stop` must leave the Tauri dev app alone**: it skips any vite under
-  `desktop-tauri/`, and `tauri dev` exits with its Vite (port 5175).
+- **agentrq's `make stop` must leave the Tauri dev app alone**: it skips any vite under
+  `src/tauri/`, and `tauri dev` exits with its Vite (port 5175).
 - **`AGENTRQ_E2E_INIT_SCRIPT` is CI's**: a script the main webview runs first, which seeds
   the theme for the screenshot job (`test/e2e/`). Only a debug build or `--features e2e`
   reads it; a release must not run an environment's script in the webview.

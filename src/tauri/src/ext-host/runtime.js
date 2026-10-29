@@ -15,27 +15,27 @@
  * the windows only the shell can open.
  */
 
-import { decorate } from '../../../desktop/src/main/extensions/catalogue.js'
-import { createDiscovery } from '../../../desktop/src/main/extensions/discovery.js'
-import { createInstaller } from '../../../desktop/src/main/extensions/install.js'
+import { decorate } from '../../../agentrq/desktop/src/main/extensions/catalogue.js'
+import { createDiscovery } from '../../../agentrq/desktop/src/main/extensions/discovery.js'
+import { createInstaller } from '../../../agentrq/desktop/src/main/extensions/install.js'
 import {
   createFetchSource,
   makeTempDir,
   readDrawer,
   readManifest,
-} from '../../../desktop/src/main/extensions/fetch-source.js'
-import { createHost } from '../../../desktop/src/main/extensions/host.js'
-import { createBroker, permitsWorkspace } from '../../../desktop/src/main/extensions/broker.js'
-import { createSchedules } from '../../../desktop/src/main/extensions/schedules.js'
-import { createConfigStore } from '../../../desktop/src/main/extensions/config.js'
-import { createStorageStore } from '../../../desktop/src/main/extensions/storage.js'
-import { createRuntime } from '../../../desktop/src/main/extensions/runtime.js'
-import { claimedShortcuts } from '../../../desktop/src/main/extensions/shortcuts.js'
-import { serverTools } from '../../../desktop/src/main/extensions/servers.js'
-import { createMcpClient } from '../../../desktop/src/main/extensions/mcp-client.js'
-import { createSupervisorAuth } from '../../../desktop/src/main/extensions/supervisor-auth.js'
-import { createToolCallReview } from '../../../desktop/src/main/extensions/tool-calls.js'
-import { createPanelHub } from '../../../desktop/src/main/side-panel/bridge.js'
+} from '../../../agentrq/desktop/src/main/extensions/fetch-source.js'
+import { createHost } from '../../../agentrq/desktop/src/main/extensions/host.js'
+import { createBroker, permitsWorkspace } from '../../../agentrq/desktop/src/main/extensions/broker.js'
+import { createSchedules } from '../../../agentrq/desktop/src/main/extensions/schedules.js'
+import { createConfigStore } from '../../../agentrq/desktop/src/main/extensions/config.js'
+import { createStorageStore } from '../../../agentrq/desktop/src/main/extensions/storage.js'
+import { createRuntime } from '../../../agentrq/desktop/src/main/extensions/runtime.js'
+import { claimedShortcuts } from '../../../agentrq/desktop/src/main/extensions/shortcuts.js'
+import { serverTools } from '../../../agentrq/desktop/src/main/extensions/servers.js'
+import { createMcpClient } from '../../../agentrq/desktop/src/main/extensions/mcp-client.js'
+import { createSupervisorAuth } from '../../../agentrq/desktop/src/main/extensions/supervisor-auth.js'
+import { createToolCallReview } from '../../../agentrq/desktop/src/main/extensions/tool-calls.js'
+import { createPanelHub } from '../../../agentrq/desktop/src/main/side-panel/bridge.js'
 
 import { createVault } from './vault.js'
 

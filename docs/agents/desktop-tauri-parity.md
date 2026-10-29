@@ -1,7 +1,7 @@
 # Tauri parity checklist
 
-> What proves that the Tauri build (`desktop-tauri/`) does what the Electron app
-> does, on each OS. There is a row for every feature in [`docs/DESKTOP.md`](../DESKTOP.md)
+> What proves that the Tauri build (`src/tauri/`) does what the Electron app
+> does, on each OS. There is a row for every feature in [`docs/DESKTOP.md`](https://github.com/agentrq/agentrq/blob/main/docs/DESKTOP.md)
 > and for every member of the `window.agentrq` bridge. Read with
 > [the Tauri note](desktop-tauri.md). Update a row in the same PR that changes
 > what it covers.
@@ -19,9 +19,9 @@ Each OS cell says what shows the behaviour really works on that OS:
 
 The **Tests** column lists the unit tests behind a row. CI runs them on Linux,
 macOS and Windows (the `Desktop App (Tauri)` workflow's test job): `core::x` is
-`desktop-tauri/core/src/x.rs`, `src-tauri::x` is `src-tauri/src/x.rs`, and a
-`.test.js` is in `desktop-tauri/test/`. The verify scripts are in
-`desktop-tauri/scripts/` and run on Linux only, in CI's `Verify scripts` job:
+`src/tauri/core/src/x.rs`, `src-tauri::x` is `src-tauri/src/x.rs`, and a
+`.test.js` is in `src/tauri/test/`. The verify scripts are in
+`src/tauri/scripts/` and run on Linux only, in CI's `Verify scripts` job:
 macOS has no WKWebView driver, and on Windows msedgedriver does not start the
 app.
 

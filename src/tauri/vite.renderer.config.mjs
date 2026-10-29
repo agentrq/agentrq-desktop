@@ -13,9 +13,9 @@ import { fileURLToPath, URL } from 'node:url'
 
 const resolvePath = (p) => fileURLToPath(new URL(p, import.meta.url))
 
-const FRONTEND_SRC = resolvePath('../frontend/src')
-const FRONTEND_ROOT = resolvePath('../frontend')
-const FRONTEND_NODE_MODULES = resolvePath('../frontend/node_modules')
+const FRONTEND_SRC = resolvePath('../agentrq/frontend/src')
+const FRONTEND_ROOT = resolvePath('../agentrq/frontend')
+const FRONTEND_NODE_MODULES = resolvePath('../agentrq/frontend/node_modules')
 
 const { version } = JSON.parse(
   await import('node:fs/promises').then((fs) => fs.readFile(resolvePath('./package.json'), 'utf-8'))
@@ -24,14 +24,14 @@ const { version } = JSON.parse(
 export default defineConfig({
   root: resolvePath('./src/renderer'),
   base: '/',
-  publicDir: resolvePath('../frontend/public'),
+  publicDir: resolvePath('../agentrq/frontend/public'),
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
   resolve: {
     alias: [
       { find: '@app', replacement: FRONTEND_SRC },
-      { find: 'virtual:pwa-register/vue', replacement: resolvePath('../frontend/src/desktop/useDesktopUpdates.js') },
+      { find: 'virtual:pwa-register/vue', replacement: resolvePath('../agentrq/frontend/src/desktop/useDesktopUpdates.js') },
       { find: /^(vue|vue-router|pinia)$/, replacement: `${FRONTEND_NODE_MODULES}/$1` },
     ],
     dedupe: ['vue', 'vue-router', 'pinia'],
@@ -55,7 +55,7 @@ export default defineConfig({
     // Fetched by the app scheme handler in the Tauri process, not a browser tab.
     cors: true,
     fs: {
-      allow: [resolvePath('./'), FRONTEND_ROOT, resolvePath('../desktop/src/renderer')],
+      allow: [resolvePath('./'), FRONTEND_ROOT, resolvePath('../agentrq/desktop/src/renderer')],
     },
   },
 })

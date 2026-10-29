@@ -11,7 +11,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       // The verify scripts drive a built app (WP10) and are run, not unit-tested.
-      include: ['src/**/*.js', 'scripts/collect-artifacts.mjs', 'scripts/generate-icons.mjs'],
+      include: ['src/**/*.js', 'scripts/check-versions.mjs', 'scripts/collect-artifacts.mjs', 'scripts/generate-icons.mjs'],
       // The renderer entry is imports, and one registration; what they load is
       // covered where it lives. The guest's init script is no module: its text
       // is run, placeholder filled, by test/panel-init.test.js.

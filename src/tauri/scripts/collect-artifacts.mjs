@@ -101,7 +101,7 @@ export function generateManifest({
   dir,
   tag,
   version = tag.replace(/^v/, ''),
-  repo = 'agentrq/agentrq',
+  repo = 'agentrq/agentrq-desktop',
   pubDate = new Date().toISOString(),
 }) {
   const prefix = `AgentRQ-Tauri-${version}-`

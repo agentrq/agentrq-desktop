@@ -1,0 +1,3 @@
+[submodule "src/agentrq"]
+	path = src/agentrq
+	url = https://github.com/agentrq/agentrq.git

@@ -22,7 +22,7 @@ import { SEALED_PREFIX } from '../src/ext-host/vault.js'
 
 // The source, or what ships when `npm run test:sidecar` names the bundle.
 const ENTRY = process.env.AGENTRQ_EXT_HOST_ENTRY || fileURLToPath(new URL('../src/ext-host/main.js', import.meta.url))
-const EXAMPLES = fileURLToPath(new URL('../../examples/extensions/', import.meta.url))
+const EXAMPLES = fileURLToPath(new URL('../../agentrq/examples/extensions/', import.meta.url))
 const NAMES = ['task-stats', 'standup', 'digest', 'guardrail', 'panel-notes']
 
 const GRANTS = {

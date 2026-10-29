@@ -5,4 +5,4 @@
 // The bridge first: desktop's renderer reads window.agentrq as it loads.
 import '../bridge/index.js'
 import './panel-guest.js'
-import '../../../desktop/src/renderer/main.js'
+import '../../../agentrq/desktop/src/renderer/main.js'

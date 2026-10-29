@@ -12,6 +12,6 @@ export default defineConfig({
   root: resolve(import.meta.dirname, '..'),
   test: {
     environment: 'node',
-    include: ['desktop/test/examples/*.test.js', 'desktop-tauri/test/ext-host-examples.test.js'],
+    include: ['agentrq/desktop/test/examples/*.test.js', 'tauri/test/ext-host-examples.test.js'],
   },
 })
