@@ -98,7 +98,10 @@ pub fn icon_search_paths(renderer_root: &Path, project_root: &Path) -> [PathBuf;
         // A dev run serves the renderer from the dev server and never builds
         // it, so the path above does not exist there. Fall back to the source
         // asset the build would have copied: the same file, one step earlier.
-        join_normalized(project_root, &["..", "agentrq", "frontend", "public", ICON_FILENAME]),
+        join_normalized(
+            project_root,
+            &["..", "agentrq", "frontend", "public", ICON_FILENAME],
+        ),
     ]
 }
 
