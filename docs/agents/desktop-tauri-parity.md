@@ -78,7 +78,7 @@ carries the Tauri build yet, so there is no update feed), and **WP10 part 2**
 | Global shortcut `Cmd/Ctrl+Shift+N` | — | M14 | M14 | M14 |
 | Deep links (`agentrq-tauri://`) | `core::deep_link` | M15 | M15 | M15 |
 | Single instance | — | M15 | M15 | M15 |
-| Web links: panel, modifier click, app-drawn, sign-in | `core::links` | M16 | M16 | M16 |
+| Web links: panel, modifier click, app-drawn, sign-in | `core::links` | A `verify-side-panel` (a message's link and the Links note's: panel; Cmd/Ctrl-click: browser); M16 | M16 | M16 |
 
 ### Side panel
 
@@ -276,7 +276,7 @@ screenshots, in the PR or task that ran the checklist.
 15. `agentrq-tauri://workspaces/<id>/tasks/<id>` opens the task from a cold
     start and from a running app, where the second launch hands over and exits.
     So do the `events` and `workflows` forms, with their query kept.
-16. A web link in a message opens in the side panel. Cmd/Ctrl-click and
+16. A web link in a message, or in the task's Links note, opens in the side panel. Cmd/Ctrl-click and
     middle-click open the system browser. The app's own links (docs, terms)
     open the system browser. An AgentRQ sign-in link stays in the app.
 

@@ -377,6 +377,18 @@ await runVerify(
       record('and the panel keeps its page', true, link)
     } else SKIPPED.push(skip('a Cmd/Ctrl-click on a message link goes to the system browser', 'only Linux has a stand-in opener'))
 
+    // The task's Links note gathers the same link, and opens it the same way.
+    await closePanel()
+    const noteLink = `document.querySelector('[data-testid="task-links"][data-pinned] a[href="${link}"]')`
+    await inPage('the Links note link', `!!${noteLink}`)
+    since = mark()
+    const openerCalls = shell ? (await shell.calls()).length : 0
+    await page(`${noteLink}.click()`)
+    await inPage('the panel to open', "!!document.querySelector('[data-side-panel]')")
+    await hello('the guest to load the page linked from the note', '/page', since)
+    record('a plain click on a link in the Links note opens it in the panel, not the browser',
+      !shell || (await shell.calls()).length === openerCalls, link)
+
     // ── guests are closed when the app's page reloads ───────────────────────
     since = mark()
     await openTask()
