@@ -127,12 +127,12 @@ await runVerify(
       'the user menu',
       `[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === ${JSON.stringify(name)})`
     )
-    // Log Out lives inside the user menu, so it is opened first: driving this
+    // Log out lives inside the user menu, so it is opened first: driving this
     // as a person does, not calling the handler.
     await page(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(name)}).click()`)
-    await session.waitForPage('Logout in the open menu', "[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Logout')")
-    await page("[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Logout').click()")
-    record('the Logout control was reachable', true, 'clicked')
+    await session.waitForPage('Log out in the open menu', "[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Log out')")
+    await page("[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Log out').click()")
+    record('the Log out control was reachable', true, 'clicked')
     await session.waitForPage('every tool to be withdrawn', "document.modelContext.getTools().then((t) => t.length === 0)")
     record('signing out withdraws every tool', true, '0 tools left registered')
 
