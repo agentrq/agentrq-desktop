@@ -17,6 +17,14 @@ or download an `AgentRQ-Tauri-*` build from the
 
 Building, testing and the verify scripts: [`src/tauri/README.md`](src/tauri/README.md).
 
+## Versions
+
+This repository takes its version numbers from
+[agentrq/agentrq](https://github.com/agentrq/agentrq), not from its own
+changes, and it skips some agentrq releases on purpose. So its versions do
+not follow semantic versioning on their own, and some versions are missing
+from this repository's releases.
+
 ## License
 
 [AGPL-3.0-only](LICENSE).
