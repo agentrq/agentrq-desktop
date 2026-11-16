@@ -85,8 +85,10 @@ jobs:
         # The thresholds in vitest.config.mjs are the gate.
         run: npm run test:coverage
 
+      # Pinned: Rust 1.100 counts an `if let` with no `else` as an uncovered
+      # line, which fails the 100% coverage gate. Move all three pins together.
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.99.1
         with:
           components: rustfmt, clippy, llvm-tools-preview
 
@@ -360,8 +362,10 @@ jobs:
           go-version-file: src/agentrq/backend/go.mod
           cache-dependency-path: src/agentrq/backend/go.sum
 
+      # Pinned: Rust 1.100 counts an `if let` with no `else` as an uncovered
+      # line, which fails the 100% coverage gate. Move all three pins together.
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.99.1
 
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2

@@ -529,18 +529,14 @@ pub struct CspOptions {
 /// WASM module, and `worker-src blob:` is how that worker is spawned. Model
 /// weights come from the Hugging Face CDN, so those hosts are in `connect-src`;
 /// API traffic needs nothing beyond `'self'` because it is proxied through this
-/// same origin. `img-src` lists the sign-in providers' avatar CDNs host by
-/// host rather than opening it to `https:`: an `<img>` to an attacker's URL is
-/// a working beacon even though it renders nothing.
+/// same origin. `img-src` allows any https host: a profile picture is the
+/// server's own bucket or any OAuth2 provider the operator added, so no host
+/// list can name them, and one that tried broke every avatar in v0.16.0.
 ///
 /// Deliberately absent: COOP/COEP, because `require-corp` would block every CDN
 /// response that lacks a CORP header, including the model weights.
 pub fn build_csp(options: &CspOptions) -> String {
     let hf = "https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co";
-    // Google serves avatars from lh3/lh4/lh5.googleusercontent.com and rotates
-    // between them; GitHub uses a single host. A new sign-in provider means a
-    // new entry here.
-    let avatars = "https://*.googleusercontent.com https://avatars.githubusercontent.com";
     let script = if options.dev {
         "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'"
     } else {
@@ -563,7 +559,7 @@ pub fn build_csp(options: &CspOptions) -> String {
         "default-src 'self'".to_string(),
         format!("script-src {script}"),
         "style-src 'self' 'unsafe-inline'".to_string(),
-        format!("img-src 'self' data: blob: {avatars}"),
+        "img-src 'self' data: blob: https:".to_string(),
         "font-src 'self' data:".to_string(),
         format!("connect-src {connect}"),
         "worker-src 'self' blob:".to_string(),
@@ -1399,30 +1395,18 @@ mod tests {
     }
 
     #[test]
-    fn allows_the_sign_in_providers_to_serve_profile_photos() {
-        // user.picture is the provider's own URL, so 'self' alone blocked every
-        // avatar and the sidebar fell back to the initial-letter placeholder.
+    fn allows_profile_photos_from_any_https_host() {
+        // user.picture may be the server's bucket or any OAuth2 provider the
+        // operator added, so a host list left the avatar broken (v0.16.0).
         for csp in [
             build_csp(&CspOptions::default()),
             build_csp(&opts(true, "http://localhost:5174", "")),
         ] {
-            let img = directive(&csp, "img-src");
-            assert!(img.contains("https://*.googleusercontent.com"));
-            assert!(img.contains("https://avatars.githubusercontent.com"));
-            assert!(img.contains("'self'"));
-            assert!(img.contains("data:"));
-            assert!(img.contains("blob:"));
+            assert_eq!(
+                directive(&csp, "img-src"),
+                "img-src 'self' data: blob: https:"
+            );
         }
-    }
-
-    #[test]
-    fn does_not_open_images_to_arbitrary_origins() {
-        // An <img> to any host is a working beacon even though it renders
-        // nothing, so the avatar hosts are listed individually.
-        let img = directive(&build_csp(&CspOptions::default()), "img-src");
-        let sources: Vec<&str> = img.split(' ').collect();
-        assert!(!sources.contains(&"https:"));
-        assert!(!sources.contains(&"*"));
     }
 
     #[test]
@@ -1487,35 +1471,35 @@ mod tests {
         let golden = [
         (
             opts(false, "", ""),
-            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         (
             opts(false, "", "https://agentrq.example"),
-            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co wss://agentrq.example; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co wss://agentrq.example; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         (
             opts(false, "", "http://localhost:3000"),
-            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co ws://localhost:3000; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co ws://localhost:3000; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         (
             opts(true, "http://localhost:5174", ""),
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co http://localhost:5174 ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co http://localhost:5174 ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         (
             opts(true, "http://localhost:5174", "http://localhost:3000"),
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co http://localhost:5174 ws://localhost:* ws://127.0.0.1:* ws://localhost:3000; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co http://localhost:5174 ws://localhost:* ws://127.0.0.1:* ws://localhost:3000; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         (
             opts(true, "", ""),
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co  ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co  ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         (
             opts(true, "", "https://a.example:8443/x"),
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co  ws://localhost:* ws://127.0.0.1:* wss://a.example:8443; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co  ws://localhost:* ws://127.0.0.1:* wss://a.example:8443; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         (
             opts(false, "", "ftp://nope/"),
-            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
         ),
         ];
         for (options, expected) in golden {
