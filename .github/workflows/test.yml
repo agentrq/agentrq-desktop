@@ -106,14 +106,26 @@ jobs:
         working-directory: src/tauri
         shell: pwsh
         run: |
-          cargo llvm-cov --version
-          cargo llvm-cov --manifest-path src-tauri/Cargo.toml --no-report 2>&1 | Select-Object -Last 5
-          Get-ChildItem src-tauri\target\llvm-cov-target -Filter *.profraw | Select-Object Name,Length | Format-Table -AutoSize | Out-String -Width 300
           $bin = Join-Path (rustc --print sysroot) "lib\rustlib\x86_64-pc-windows-msvc\bin"
-          Get-ChildItem src-tauri\target\llvm-cov-target -Filter *.profraw | ForEach-Object { & "$bin\llvm-profdata.exe" show $_.FullName 2>&1 | Select-Object -First 4 }
-          Get-ChildItem -Recurse src-tauri\target\llvm-cov-target\debug -Include agentrq_tauri*.exe,agentrq_tauri*.dll | Select-Object FullName,Length,LastWriteTime | Format-Table -AutoSize | Out-String -Width 400
-          cargo llvm-cov report --manifest-path src-tauri/Cargo.toml -v --summary-only 2>&1 | Select-Object -Last 8 | Out-String -Width 2000
-          $pd = "src-tauri\target\llvm-cov-target\src-tauri.profdata"
-          & "$bin\llvm-profdata.exe" show $pd 2>&1 | Select-Object -First 6
-          Get-ChildItem -Recurse src-tauri\target\llvm-cov-target\debug -Include agentrq_tauri*.exe,agentrq_tauri*.dll | ForEach-Object { "== $($_.FullName)"; & "$bin\llvm-cov.exe" report -summary-only -instr-profile=$pd -object $_.FullName 2>&1 | Select-Object -Last 2 }
-          Get-ChildItem -Recurse src-tauri\target\llvm-cov-target\debug -Include *.exe | Where-Object { $_.Name -like "agentrq_tauri*" } | ForEach-Object { "== sections $($_.Name)"; & "$bin\llvm-objdump.exe" -h $_.FullName 2>&1 | Select-String "cov|prf" }
+          cargo llvm-cov show-env
+          cargo llvm-cov --manifest-path src-tauri/Cargo.toml --no-report 2>&1 | Select-String "Running|test result|error" | Out-String -Width 600
+          "== profraws"; Get-ChildItem src-tauri\target\llvm-cov-target -Filter *.profraw | ForEach-Object { "$($_.Name) $($_.Length)" }
+          $exe = Get-ChildItem -Recurse src-tauri\target\llvm-cov-target\debug -Filter "agentrq_tauri_lib-*.exe" | Select-Object -First 1
+          "== sections of $($exe.FullName)"; & "$bin\llvm-objdump.exe" -h $exe.FullName 2>&1 | Out-String -Width 300
+          "== direct run"
+          $env:LLVM_PROFILE_FILE = "$PWD\direct-%p.profraw"
+          & $exe.FullName --test-threads=4 2>&1 | Select-Object -Last 3
+          "exit=$LASTEXITCODE"
+          Get-ChildItem -Filter "direct-*.profraw" | ForEach-Object { "$($_.Name) $($_.Length)" }
+          "== single test"
+          & $exe.FullName --exact cookie_jar::tests 2>&1 | Select-Object -Last 2
+          & $exe.FullName --list 2>&1 | Select-Object -First 3
+          $one = (& $exe.FullName --list 2>&1 | Select-Object -First 1) -replace ": test$",""
+          Remove-Item direct-*.profraw -ErrorAction SilentlyContinue
+          & $exe.FullName --exact $one 2>&1 | Select-Object -Last 2
+          "exit=$LASTEXITCODE"
+          Get-ChildItem -Filter "direct-*.profraw" | ForEach-Object { "$($_.Name) $($_.Length)" }
+          "== core for comparison"
+          cargo llvm-cov --manifest-path core/Cargo.toml --no-report 2>&1 | Select-String "test result" | Out-String
+          $cexe = Get-ChildItem -Recurse core\target\llvm-cov-target\debug -Filter "agentrq_desktop_core-*.exe" | Select-Object -First 1
+          & "$bin\llvm-objdump.exe" -h $cexe.FullName 2>&1 | Select-String "lcov|lprf" | Out-String
