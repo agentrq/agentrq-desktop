@@ -353,9 +353,11 @@ pub(crate) fn handle_second_instance<R: Runtime>(app: &AppHandle<R>, argv: &[Str
 pub(crate) fn handle_window_event<R: Runtime>(window: &tauri::Window<R>, event: &WindowEvent) {
     if window.label() == "main" {
         if let WindowEvent::Focused(true) = event {
-            if let Some(notifier) = window.app_handle().try_state::<Arc<Notifier>>() {
-                notifier.clear_unread();
-            }
+            window
+                .app_handle()
+                .try_state::<Arc<Notifier>>()
+                .into_iter()
+                .for_each(|notifier| notifier.clear_unread());
         }
     }
 }

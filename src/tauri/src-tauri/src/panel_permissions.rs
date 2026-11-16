@@ -42,9 +42,7 @@ impl Answer {
     }
 
     pub fn give(mut self, granted: bool) {
-        if let Some(give) = self.0.take() {
-            give(granted);
-        }
+        self.0.take().into_iter().for_each(|give| give(granted));
     }
 }
 

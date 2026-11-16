@@ -312,9 +312,10 @@ async fn fetch(
         }
         hasher.update(&chunk);
         file.write_all(&chunk).await.map_err(failed)?;
-        if let Some(percent) = steps.advance(done, pin.archive_size) {
-            progress(done, pin.archive_size, percent);
-        }
+        steps
+            .advance(done, pin.archive_size)
+            .into_iter()
+            .for_each(|percent| progress(done, pin.archive_size, percent));
     }
     file.flush().await.map_err(failed)?;
     if hasher.finish() != pin.archive_sha256 {

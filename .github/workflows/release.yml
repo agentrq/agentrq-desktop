@@ -136,10 +136,8 @@ jobs:
         working-directory: src/tauri
         run: npm run build:renderer
 
-      # Pinned: Rust 1.100 counts an `if let` with no `else` as an uncovered
-      # line, which fails the 100% coverage gate. Move all three pins together.
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@1.99.1
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 

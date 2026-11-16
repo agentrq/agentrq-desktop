@@ -62,10 +62,9 @@ impl ProfileJar {
         let mut json = Vec::new();
         // Writing JSON to memory only fails on a cookie serde cannot encode,
         // and then the jar on disk keeps its previous contents.
-        if cookie_store::serde::json::save(store, &mut json).is_ok() {
-            // A jar that cannot be written stays in memory: signed in until quit.
-            let _ = write_private(&self.file, &vault.seal(&json));
-        }
+        // A jar that cannot be written stays in memory: signed in until quit.
+        let _ = cookie_store::serde::json::save(store, &mut json)
+            .map(|()| write_private(&self.file, &vault.seal(&json)));
     }
 
     /// Keep a cookie read from a sign-in webview, as if `server` had set it.

@@ -501,9 +501,9 @@ impl ExtHost {
     fn kill_generation(&self, generation: u64) {
         let state = lock(&self.state);
         if state.generation == generation && state.stopping != Some(generation) {
-            if let Some(process) = &state.process {
+            state.process.iter().for_each(|process| {
                 let _ = process.kill.try_send(());
-            }
+            });
         }
     }
 
@@ -695,9 +695,9 @@ impl ExtHost {
             Message::Request { id, method, params } => {
                 let Some(answer) = self.services.serve(&method, params) else {
                     let refused = format!("The app does not answer \"{method}\".");
-                    if let Some(out) = out.upgrade() {
-                        let _ = out.send(ext_rpc::error_response(id, METHOD_NOT_FOUND, &refused));
-                    }
+                    let _ = out.upgrade().map(|out| {
+                        out.send(ext_rpc::error_response(id, METHOD_NOT_FOUND, &refused))
+                    });
                     return;
                 };
                 let out = out.clone();
@@ -707,9 +707,9 @@ impl ExtHost {
                     let result = tokio::time::timeout(deadline, answer)
                         .await
                         .unwrap_or_else(|_| Err(timed_out(&method)));
-                    if let Some(out) = out.upgrade() {
-                        let _ = out.send(ext_rpc::response(id, result));
-                    }
+                    let _ = out
+                        .upgrade()
+                        .map(|out| out.send(ext_rpc::response(id, result)));
                 });
             }
             Message::Notification { method, params } => self.told(&method, &params, generation),
@@ -868,7 +868,6 @@ pub(crate) mod tests {
             let answer = match method {
                 "vault" => Ok(json!({ "available": true })),
                 "seal" => Ok(json!({ "ok": true, "sealed": params["texts"] })),
-                "open" => Ok(json!({ "opened": params["blobs"] })),
                 "slow" => return Some(Box::pin(std::future::pending())),
                 "refuse" => Err("refused".to_string()),
                 _ => return None,

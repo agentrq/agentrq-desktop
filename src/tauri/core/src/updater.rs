@@ -30,7 +30,7 @@ use serde::Serialize;
 use std::collections::{HashSet, VecDeque};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Mutex, PoisonError, Weak};
 use std::time::Duration;
 
 /// Fifteen minutes.
@@ -887,9 +887,8 @@ impl Updater {
 
     /// Queue what the installer's exit means, once the poll is stopped.
     fn enqueue_verdict(&self, exit: InstallerExit, log: &dyn InstallLog, poll: Option<u64>) {
-        if let Some(poll) = poll {
-            self.inner.scheduler.clear_interval(poll);
-        }
+        poll.into_iter()
+            .for_each(|poll| self.inner.scheduler.clear_interval(poll));
         let parsed = parse_installer_log(&log.read());
         log.close();
 
@@ -1016,9 +1015,8 @@ struct Draining<'a>(&'a Mutex<Outbox>);
 impl Drop for Draining<'_> {
     fn drop(&mut self) {
         if std::thread::panicking() {
-            if let Ok(mut outbox) = self.0.lock() {
-                outbox.delivering = false;
-            }
+            let mut outbox = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+            outbox.delivering = false;
         }
     }
 }
