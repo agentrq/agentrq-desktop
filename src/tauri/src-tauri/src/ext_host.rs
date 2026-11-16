@@ -1376,23 +1376,40 @@ pub(crate) mod tests {
         assert!(out.is_closed());
     }
 
-    #[test]
-    fn kill_sync_with_none_pid() {
+    /// `kill_sync` on a host whose child has this pid, without spawning one.
+    fn kill_sync_with_pid(pid: Option<u32>) {
         let dir = tempfile::tempdir().unwrap();
         let host = host(script_launch(""), dir.path(), Arc::default());
-        {
-            let mut state = lock(&host.state);
-            state.process = Some(Process {
-                generation: 1,
-                pid: None,
-                out: mpsc::unbounded_channel().0,
-                pending: Pending::default(),
-                ids: Ids::default(),
-                context: None,
-                kill: mpsc::channel(1).0,
-            });
-        }
+        lock(&host.state).process = Some(Process {
+            generation: 1,
+            pid,
+            out: mpsc::unbounded_channel().0,
+            pending: Pending::default(),
+            ids: Ids::default(),
+            context: None,
+            kill: mpsc::channel(1).0,
+        });
         host.kill_sync();
+        assert!(lock(&host.state).process.is_none());
+    }
+
+    #[test]
+    fn kill_sync_with_none_pid() {
+        kill_sync_with_pid(None);
+    }
+
+    /// A child that has exited and been reaped: Windows cannot open it.
+    #[test]
+    fn kill_sync_with_a_child_already_gone() {
+        let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+            .arg("--list")
+            .stdout(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        child.wait().unwrap();
+        drop(child);
+        kill_sync_with_pid(Some(pid));
     }
 
     #[test]
