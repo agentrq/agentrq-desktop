@@ -1402,7 +1402,10 @@ mod tests {
             build_csp(&CspOptions::default()),
             build_csp(&opts(true, "http://localhost:5174", "")),
         ] {
-            assert_eq!(directive(&csp, "img-src"), "img-src 'self' data: blob: https:");
+            assert_eq!(
+                directive(&csp, "img-src"),
+                "img-src 'self' data: blob: https:"
+            );
         }
     }
 
