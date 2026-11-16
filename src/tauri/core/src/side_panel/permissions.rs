@@ -273,11 +273,11 @@ impl<S: PermissionStoreBackend + 'static> PermissionBroker<S> {
             .map(|(&id, _)| id)
             .collect();
 
-        for earlier_id in earlier_ids {
-            if let Some(item) = remove_pending(&mut state, &*self.timers, earlier_id, false) {
-                to_settle.push(item);
-            }
-        }
+        to_settle.extend(
+            earlier_ids.into_iter().filter_map(|earlier_id| {
+                remove_pending(&mut state, &*self.timers, earlier_id, false)
+            }),
+        );
 
         let id = state.next_id;
         state.next_id += 1;
@@ -289,16 +289,16 @@ impl<S: PermissionStoreBackend + 'static> PermissionBroker<S> {
         let timer = self.timers.set_timer(
             self.deadline_ms,
             Box::new(move || {
-                if let Some(state_arc) = state_weak.upgrade() {
+                let settlement = state_weak.upgrade().and_then(|state_arc| {
                     let mut state = state_arc.lock().unwrap();
-                    if let Some((cb, settled_id, granted)) =
-                        remove_pending(&mut state, &*timers_clone, id, false)
-                    {
-                        drop(state);
+                    remove_pending(&mut state, &*timers_clone, id, false)
+                });
+                settlement
+                    .into_iter()
+                    .for_each(|(cb, settled_id, granted)| {
                         cb(granted);
                         settled_clone(settled_id);
-                    }
-                }
+                    });
             }),
         );
 
@@ -388,13 +388,9 @@ impl<S: PermissionStoreBackend + 'static> PermissionBroker<S> {
                 .map(|(&id, _)| id)
                 .collect();
 
-            let mut list = Vec::new();
-            for id in ids {
-                if let Some(item) = remove_pending(&mut state, &*self.timers, id, false) {
-                    list.push(item);
-                }
-            }
-            list
+            ids.into_iter()
+                .filter_map(|id| remove_pending(&mut state, &*self.timers, id, false))
+                .collect::<Vec<_>>()
         };
 
         for (cb, id, granted) in to_settle {
@@ -466,12 +462,12 @@ mod tests {
         fn new(initial: &[(&str, &[(&str, &str)])]) -> Self {
             let mut map = HashMap::new();
             for (origin, perms) in initial {
-                let mut perms_map = HashMap::new();
-                for (k, v) in *perms {
-                    if let Some(dec) = PermissionDecision::parse(v) {
-                        perms_map.insert(k.to_string(), dec);
-                    }
-                }
+                let perms_map: HashMap<String, PermissionDecision> = perms
+                    .iter()
+                    .filter_map(|(k, v)| {
+                        PermissionDecision::parse(v).map(|dec| (k.to_string(), dec))
+                    })
+                    .collect();
                 map.insert(origin.to_string(), perms_map);
             }
             Self {

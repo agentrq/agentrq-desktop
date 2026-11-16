@@ -36,6 +36,15 @@
   instead of fixed sleeps; a wait must assert. For microsecond-long spawned work the
   rig can't open a gap, so prove a fix with an injected delay.
 - **A log line that only runs on slow runs flakes the 100% line-coverage gate.**
+- **Since Rust 1.100 an `if`/`if let` with no `else` whose skip no test takes fails
+  the gate** on its closing `}`. Test the `None`/`Err` path, or write it with no
+  skip: `filter_map`, `opt.into_iter().for_each(..)`, `let _ = opt.map(..)`,
+  `lock().unwrap_or_else(PoisonError::into_inner)`.
+- **src-tauri's coverage needs `--no-rustc-wrapper`.** Under 1.100's build layout its
+  rustc command line on Windows goes into an `@argfile`, where cargo-llvm-cov's wrapper
+  finds no crate name: the tests run uninstrumented and the report finds no data.
+- **A test whose client gives up early must not script the server's wait**: the
+  request may never be sent, so the script stays unrun. Use `test_server::silent_port`.
 - **A Rust `listen` can miss an event two threads emit at once.** Tauri's
   `emit_filter` queues an emit (or a registration) that loses `try_lock` to another,
   and only the next emit that runs a Rust listener delivers it; JS listeners never

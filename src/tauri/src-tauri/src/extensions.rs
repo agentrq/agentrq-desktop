@@ -284,9 +284,9 @@ pub async fn extensions_state(host: State<'_, Arc<ExtHost>>) -> Result<Value, St
         Health::Ready(_) => host.call("state", json!({})).await?,
         _ => host.state_from_disk(),
     };
-    if let Value::Object(map) = &mut state {
+    state.as_object_mut().into_iter().for_each(|map| {
         map.insert("node".into(), node.status(&health));
-    }
+    });
     Ok(state)
 }
 

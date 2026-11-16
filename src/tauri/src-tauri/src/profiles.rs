@@ -717,7 +717,7 @@ impl UserFetch for ClientFetch {
 pub(crate) mod tests {
     use super::*;
     use crate::sign_in::tests::FakeWebview;
-    use crate::test_server::{reply, Step, TestServer};
+    use crate::test_server::{reply, silent_port, TestServer};
     use agentrq_desktop_core::profiles::data_store_id;
 
     /// What the shell was asked to do. Like the real one, it only starts
@@ -944,8 +944,8 @@ pub(crate) mod tests {
 
     #[tokio::test]
     async fn gives_up_on_a_probe_that_never_answers() {
-        let srv = TestServer::start(|_| vec![Step::Wait(5_000)]).await;
-        let answer = probe(&format!("{}/x", srv.url), Duration::from_millis(50)).await;
+        let (_silent, url) = silent_port().await;
+        let answer = probe(&format!("{url}/x"), Duration::from_millis(50)).await;
         assert_eq!(answer, Err("No answer within 0s".to_string()));
         let cut = TestServer::start(|_| {
             vec![crate::test_server::send(

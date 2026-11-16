@@ -131,6 +131,16 @@ async fn serve(mut socket: tokio::net::TcpStream, script: Arc<Script>, log: Arc<
     }
 }
 
+/// A loopback port that takes a connection and never reads it, so a request
+/// waits until its client gives up. A scripted wait is not that: a client that
+/// gives up before sending leaves its script unrun, an uncovered line.
+/// Keep the listener for as long as the test.
+pub async fn silent_port() -> (TcpListener, String) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    (listener, url)
+}
+
 /// A loopback address nothing listens on.
 pub async fn closed_port() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

@@ -135,9 +135,7 @@ impl<R: Runtime> SidePanelHost for Rules<R> {
     fn send_find(&self) {
         let app = self.0.clone();
         tauri::async_runtime::spawn(async move {
-            if let Some(main) = chrome::main_webview(&app) {
-                let _ = main.set_focus();
-            }
+            let _ = chrome::main_webview(&app).map(|main| main.set_focus());
             let _ = app.emit_to(MAIN, "agentrq:side-panel:find", ());
         });
     }
@@ -326,9 +324,7 @@ fn route_link<R: Runtime>(app: &AppHandle<R>, url: &str) {
 }
 
 fn navigate<R: Runtime>(webview: &Webview<R>, url: &str) {
-    if let Ok(url) = Url::parse(&webview_url(url, WEBVIEW2)) {
-        let _ = webview.navigate(url);
-    }
+    let _ = Url::parse(&webview_url(url, WEBVIEW2)).map(|url| webview.navigate(url));
 }
 
 fn emit<R: Runtime>(app: &AppHandle<R>, event: GuestEvent) {
@@ -771,10 +767,10 @@ fn forget<R: Runtime>(app: &AppHandle<R>, label: &str) {
     }
     lock(&state.finds).remove(label);
     state.keys.forget(label);
-    if let Some(number) = guest_number(label) {
+    guest_number(label).into_iter().for_each(|number| {
         state.rules.guest_destroyed(number);
         crate::panel_permissions::closed(app, number);
-    }
+    });
     platform::forget(label);
 }
 

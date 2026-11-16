@@ -248,9 +248,7 @@ impl Pending {
     }
 
     fn send(&self, ended: Ended) {
-        if let Some(done) = lock(&self.done).take() {
-            let _ = done.send(ended);
-        }
+        let _ = lock(&self.done).take().map(|done| done.send(ended));
     }
 }
 
@@ -374,9 +372,9 @@ async fn authorize_within<R: Runtime>(
         Err(None) => return Err(OAuthError::SigningIn),
         Err(Some(open)) => {
             // As a second sign-in would: the person is shown the one they have.
-            if let Some(window) = app.get_webview_window(&open) {
-                let _ = window.set_focus();
-            }
+            let _ = app
+                .get_webview_window(&open)
+                .map(|window| window.set_focus());
             return Err(OAuthError::Busy);
         }
     }
