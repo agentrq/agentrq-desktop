@@ -146,7 +146,7 @@ async fn read_body(response: reqwest::Response, limits: BodyLimits) -> Result<Ve
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_server::{closed_port, reply, send as step, Step, TestServer};
+    use crate::test_server::{closed_port, reply, send as step, silent_port, Step, TestServer};
 
     /// How long a server stays silent: a deadline must cut in before it ends,
     /// however slow the runner is.
@@ -235,11 +235,11 @@ mod tests {
 
     #[tokio::test]
     async fn aborts_the_request_it_gave_up_on() {
-        let server = TestServer::start(|_| vec![Step::Wait(SILENCE_MS)]).await;
+        let (_silent, url) = silent_port().await;
         let started = std::time::Instant::now();
         let failed = send(
             &reqwest::Client::new(),
-            get(format!("{}/api/v1/slow", server.url), 100),
+            get(format!("{url}/api/v1/slow"), 100),
         )
         .await;
         assert_eq!(failed.unwrap_err(), ProxyError::Timeout);
