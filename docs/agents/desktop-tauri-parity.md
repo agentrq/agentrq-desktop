@@ -25,9 +25,10 @@ macOS and Windows (the `Desktop App (Tauri)` workflow's test job): `core::x` is
 macOS has no WKWebView driver, and on Windows msedgedriver does not start the
 app.
 
-Open gaps that hold several rows: **WP8 release job** (#1035, no release
-carries the Tauri build yet, so there is no update feed), and **WP10 part 2**
-(the `verify-side-panel`, `verify-webmcp` and `verify-ui-telemetry` ports).
+The gaps that once held several rows are closed: the **WP8 release job**
+(every `v*` tag publishes the Tauri build and `latest-tauri.json`) and **WP10
+part 2** (`verify-side-panel`, `verify-webmcp` and `verify-ui-telemetry`, in
+CI's `Verify scripts` job).
 
 ## Features
 
@@ -35,12 +36,12 @@ carries the Tauri build yet, so there is no update feed), and **WP10 part 2**
 
 | Feature | Tests | Linux | macOS | Windows |
 |---|---|---|---|---|
-| One-command install (`install.sh --tauri`) | `installers/test/install.test.js` (asset picks) | M1; G WP8 release job | M1; G WP8 release job | — |
-| Hand-downloaded packages | — | M2; G WP8 release job | M2; G WP8 release job | M2; G WP8 release job |
+| One-command install (`install.sh --tauri`) | `installers/test/install.test.js` (asset picks) | M1 | M1 | — |
+| Hand-downloaded packages | — | M2 | M2 | M2 |
 | First-launch security warning | — | — | M2 | M2 |
-| Auto-update: check at launch and every 15 min, download | `core::updater` | M3; G WP8 release job | M3; G WP8 release job | M3; G WP8 release job |
+| Auto-update: check at launch and every 15 min, download | `core::updater` | M3 | M3 | M3 |
 | Update banner | `core::updater`, `bridge.test.js` (update state) | A `verify-e2e` (no banner without an update); M3 | M3 | M3 |
-| Check for Updates… menu item | `core::menu` | G follow-up: the item is disabled (`can_check_for_updates: false`) | G same | G same |
+| Check for Updates… menu item | `core::menu`, `core::updater` | M3 | M3 | M3 |
 | Script-install fallback | `core::updater`, `core::install_log` | M4 | M4 | — |
 | Signed update feed (`latest-tauri.json`, minisign key) | `core::updater` | M3 | M3 | M3 |
 
@@ -84,8 +85,8 @@ carries the Tauri build yet, so there is no update feed), and **WP10 part 2**
 
 | Feature | Tests | Linux | macOS | Windows |
 |---|---|---|---|---|
-| Toggle (`Cmd/Ctrl+\`, task header, sidebar, title bar) | `core::menu`, `core::side_panel::wire` | M17; G WP10 part 2 | M17 | M17 |
-| Address bar, back, forward, reload, stop | `panel-guest.test.js`, `src-tauri::side_panel` | M17, M20; G WP10 part 2 | M17, M20 | M17, M20 |
+| Toggle (`Cmd/Ctrl+\`, task header, sidebar, title bar) | `core::menu`, `core::side_panel::wire` | A `verify-side-panel` (the task view's button); M17 | M17 | M17 |
+| Address bar, back, forward, reload, stop | `panel-guest.test.js`, `src-tauri::side_panel` | A `verify-side-panel`; M17, M20 | M17, M20 | M17, M20 |
 | Open in browser | `src-tauri::side_panel` | M17 | M17 | M17 |
 | Expand, collapse, resize drag and reset | `panel-guest.test.js` (freeze while dragging) | M17, M19 | M17, M19 | M17, M19 |
 | Task view in its phone layout beside the panel | (frontend tests) | M17 | M17 | M17 |
@@ -143,8 +144,8 @@ carries the Tauri build yet, so there is no update feed), and **WP10 part 2**
 |---|---|---|---|
 | Unit tests (vitest, `cargo test`) and the 100% line gates | A | A | A |
 | `verify-e2e`, `verify-connection`, `verify-markdown-links` | A | M (no driver): M5, M6, M9, M30 | G follow-up: msedgedriver cannot start the app in CI; untried by hand |
-| `verify-side-panel` | G WP10 part 2 | M17–M25 | M17–M25 |
-| `verify-webmcp`, `verify-ui-telemetry` | G WP10 part 2 | M44 | M44 |
+| `verify-side-panel` | A | M17–M25 | M17–M25 |
+| `verify-webmcp`, `verify-ui-telemetry` | A | M44 | M44 |
 | `test/e2e/extensions.js`, in CI's test job | A | M43 | M43 |
 
 ## Bridge members
@@ -172,7 +173,7 @@ command takes them. `verify-e2e` checks on Linux that the whole bridge is there.
 | `extensions.downloadNode`, `cancelNodeDownload`, `onNodeProgress` (Tauri only: Electron bundles Node) | `extensions_download_node`, `extensions_cancel_node_download`, `agentrq:extensions:node-progress` | `src-tauri::ext_node`, `src-tauri::extensions`, `core::ext_node`, `parity.test.js` | A `test/e2e/extensions.js` | M45 | M45 |
 | `extensions.onChanged` | `agentrq:extensions:changed` | `parity.test.js`, `src-tauri::extensions`, `src-tauri::ext_host` | M43 | M43 | M43 |
 | `updates.get`, `onStatus` | `update_get`, `agentrq:update:status` | `core::updater`, `src-tauri::commands`, `bridge.test.js` | A `verify-e2e` (no banner); M3 | M3 | M3 |
-| `updates.check` | `update_check` | `core::updater`, `src-tauri::commands` | G follow-up: menu item disabled | G same | G same |
+| `updates.check` | `update_check` | `core::updater`, `src-tauri::commands` | M3 | M3 | M3 |
 | `updates.installNow` | `update_install` | `core::updater` | M3 | M3 | M3 |
 | `updates.installViaScript` | `update_install_via_script` | `core::updater`, `core::install_log` | M4 | M4 | — |
 | `sidePanel.guest` | — (`'tauri'`) | `parity.test.js` | A (unit) | A (unit) | A (unit) |

@@ -343,7 +343,9 @@ jobs:
           # still stuck, and the next resumes from the packages already fetched.
           for try in 1 2 3; do
             timeout -k 30 300 sudo apt-get update -q -o Acquire::http::Timeout=30 -o Acquire::Retries=5 &&
-              timeout -k 30 900 sudo apt-get install -y -q -o Dpkg::Use-Pty=0 -o DPkg::Lock::Timeout=60 -o Acquire::http::Timeout=30 -o Acquire::Retries=5 libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev webkit2gtk-driver xvfb xclip xdotool dbus-x11 python3-gi && break
+              # Ubuntu 26.04 renamed webkit2gtk-driver to webkitgtk-webdriver.
+              driver=$(apt-cache show webkitgtk-webdriver >/dev/null 2>&1 && echo webkitgtk-webdriver || echo webkit2gtk-driver) &&
+              timeout -k 30 900 sudo apt-get install -y -q -o Dpkg::Use-Pty=0 -o DPkg::Lock::Timeout=60 -o Acquire::http::Timeout=30 -o Acquire::Retries=5 libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev "$driver" xvfb xclip xdotool dbus-x11 python3-gi && break
             rc=$?
             [ "$try" = 3 ] && exit 1
             echo "::warning::apt try $try failed or stalled (exit $rc); retrying"
