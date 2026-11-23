@@ -29,7 +29,7 @@ is the "Preview: Tauri build" section of [agentrq's `docs/DESKTOP.md`](https://g
   ```sh
   sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev webkit2gtk-driver xvfb xclip dbus-x11 python3-gi
   ```
-  The first four (`libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev`) are required to build and run the app. `webkit2gtk-driver` (`WebKitWebDriver`), `xvfb`, `xclip`, `dbus-x11`, and `python3-gi` are required to run the headless verify scripts under `tauri-driver`.
+  The first four (`libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev`) are required to build and run the app. `webkit2gtk-driver` (`WebKitWebDriver`; `webkitgtk-webdriver` on Ubuntu 26.04 and later), `xvfb`, `xclip`, `dbus-x11`, and `python3-gi` are required to run the headless verify scripts under `tauri-driver`.
 - **macOS**: Xcode Command Line Tools (`xcode-select --install`).
 - **Windows**: WebView2 runtime (pre-installed on Windows 10 and 11) and MSVC C++ Build Tools.
 - **Node.js and Rust**: Node 26 and npm; stable Rust (`rustup default stable`) with components `rustfmt, clippy, llvm-tools-preview`.
@@ -134,7 +134,7 @@ native WebDriver:
 
 | OS | Native driver | Notes |
 | --- | --- | --- |
-| Linux | `WebKitWebDriver`, from the `webkit2gtk-driver` package | Run under Xvfb and a session bus. `xclip` lets the clipboard check read back what the app copied; `dbus-daemon` and `python3-gi` give the markdown-links check a private bus with a stand-in file manager (without them the reveal check is skipped, with the reason). |
+| Linux | `WebKitWebDriver`, from the `webkit2gtk-driver` package (`webkitgtk-webdriver` on Ubuntu 26.04 and later) | Run under Xvfb and a session bus. `xclip` lets the clipboard check read back what the app copied; `dbus-daemon` and `python3-gi` give the markdown-links check a private bus with a stand-in file manager (without them the reveal check is skipped, with the reason). |
 | Windows | `msedgedriver` matching the WebView2 runtime; `VERIFY_NATIVE_DRIVER` is its path | Not in CI: on a runner msedgedriver answers "DevToolsActivePort file doesn't exist" and the app never starts. Untried by hand; the shell-call assertions would be skipped, with no opener to stand in for. |
 | macOS | none | WKWebView has no WebDriver. Those rows of the parity checklist are manual. |
 
