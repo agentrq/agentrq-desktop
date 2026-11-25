@@ -9,18 +9,23 @@ submodule.
 ## Install
 
 Builds are on the [releases](https://github.com/agentrq/agentrq-desktop/releases)
-page, named `AgentRQ-Tauri-<version>-<arch>.<ext>`. Once installed, the app
-updates itself from those releases.
+page, named `AgentRQ-Tauri-<version>-<arch>.<ext>`. The install scripts
+below pick the right one, check it against the SHA-256 GitHub records for it,
+and install it. Once installed, the app updates itself from those releases.
+
+Every script takes `--version <tag>` (`-Version` on Windows, or
+`AGENTRQ_VERSION` anywhere) to install a given release, and `--help`.
 
 ### macOS (Apple silicon and Intel)
 
 ```sh
-curl -fsSL https://agentrq.com/install.sh | sh -s -- --tauri
+curl -fsSL https://raw.githubusercontent.com/agentrq/agentrq-desktop/main/install.sh | sh
 ```
 
 This installs `AgentRQ Tauri.app` into `/Applications` (or
 `~/Applications` when that is not writable); open it with
-`open -a 'AgentRQ Tauri'`. Run the same command again to update.
+`open -a 'AgentRQ Tauri'`. Run the same command again to update. If the app
+is running, add `-s -- --quit` to have the script close it first.
 
 Or download the `.dmg` for your Mac (`arm64` for Apple silicon, `x64` for
 Intel), open it and drag **AgentRQ Tauri** into Applications.
@@ -28,7 +33,7 @@ Intel), open it and drag **AgentRQ Tauri** into Applications.
 ### Linux (x64)
 
 ```sh
-curl -fsSL https://agentrq.com/install.sh | sh -s -- --tauri
+curl -fsSL https://raw.githubusercontent.com/agentrq/agentrq-desktop/main/install.sh | sh
 ```
 
 This installs the AppImage as `~/.local/bin/agentrq-tauri`, with a launcher
@@ -49,9 +54,18 @@ There is no Linux arm64 build yet.
 
 ### Windows (x64)
 
-Download `AgentRQ-Tauri-<version>-x64.exe` and run it. It installs for the
-current user only, so it needs no administrator rights, and adds a Start menu
-entry. If SmartScreen warns about an unrecognised app, choose **More info** →
+In PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/agentrq/agentrq-desktop/main/install.ps1 | iex
+```
+
+Run the same command again to update. If the app is running, set
+`$env:AGENTRQ_QUIT = '1'` first to have the script close it.
+
+Or download `AgentRQ-Tauri-<version>-x64.exe` and run it. Either way it
+installs for the current user only, so it needs no administrator rights, and
+adds a Start menu entry. If SmartScreen warns about an unrecognised app, choose **More info** →
 **Run anyway**. Uninstall it from **Settings → Apps**.
 
 ## Build from source

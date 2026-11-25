@@ -1,0 +1,121 @@
+name: Installers
+
+# install.sh and install.ps1: unit tests against a fake GitHub, then a real
+# install of the latest release on each OS, run twice so the second run proves
+# the "already installed" check.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'install.sh'
+      - 'install.ps1'
+      - 'test/install.test.js'
+      - '.github/workflows/installers.yml'
+  pull_request:
+    paths:
+      - 'install.sh'
+      - 'install.ps1'
+      - 'test/install.test.js'
+      - '.github/workflows/installers.yml'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    name: install.sh (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+
+      - name: Syntax and ASCII
+        run: |
+          sh -n install.sh
+          if command -v dash >/dev/null; then dash -n install.sh; fi
+          if LC_ALL=C grep -n '[^[:print:][:space:]]' install.sh install.ps1; then exit 1; fi
+
+      - name: Unit tests
+        run: node --test test/
+
+      - name: Install the latest release
+        run: |
+          sh install.sh
+          sh install.sh | tee second.txt
+          grep -q 'already installed' second.txt
+
+      - name: Check the install (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          test -x "$HOME/.local/bin/agentrq-tauri"
+          test -f "$HOME/.local/share/applications/agentrq-tauri.desktop"
+          test -f "$HOME/.local/share/icons/hicolor/512x512/apps/agentrq-tauri.png"
+
+      - name: Check the install (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          app="/Applications/AgentRQ Tauri.app"
+          [ -d "$app" ] || app="$HOME/Applications/AgentRQ Tauri.app"
+          defaults read "$app/Contents/Info" CFBundleShortVersionString
+          codesign --verify --deep "$app"
+
+  windows:
+    name: install.ps1 (windows-latest)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD/install.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors) { $errors; exit 1 }
+
+      # The way the README runs it, in Windows PowerShell 5.1.
+      - name: Install the latest release (irm | iex, Windows PowerShell)
+        shell: powershell
+        run: Get-Content -Raw install.ps1 | Invoke-Expression
+
+      - name: Run it again (PowerShell 7, as a file)
+        shell: pwsh
+        run: |
+          ./install.ps1 | Tee-Object -Variable out
+          if (-not ($out -match 'already installed')) { exit 1 }
+
+      - name: Check the install
+        shell: pwsh
+        run: |
+          $entry = Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall' |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq 'AgentRQ Tauri' }
+          if (-not $entry) { 'no uninstall entry'; exit 1 }
+          $entry | Format-List DisplayName, DisplayVersion, InstallLocation
+          $exe = Join-Path $entry.InstallLocation 'agentrq-tauri.exe'
+          if (-not (Test-Path $exe)) { "missing $exe"; exit 1 }
+
+      - name: A missing release is an error, not a closed window
+        shell: powershell
+        run: |
+          $env:AGENTRQ_VERSION = 'v0.0.0'
+          try { Get-Content -Raw install.ps1 | Invoke-Expression; 'no error'; exit 1 }
+          catch { if ("$_" -notmatch 'could not fetch') { "$_"; exit 1 } }
