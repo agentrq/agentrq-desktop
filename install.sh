@@ -314,6 +314,10 @@ if [ "$platform" = "mac" ]; then
 	rm -rf "$staging"
 	cp -R "$src_app" "$staging" || die "could not copy the application into $dest_dir"
 
+	# The macOS build is not notarized. curl sets no quarantine flag, but clear
+	# any anyway: with one, Gatekeeper refuses to open the app.
+	xattr -dr com.apple.quarantine "$staging" 2>/dev/null || true
+
 	rm -rf "$app"
 	mv "$staging" "$app"
 

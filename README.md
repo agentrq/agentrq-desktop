@@ -39,7 +39,15 @@ This installs `AgentRQ Tauri.app` into `/Applications` (or
 is running, add `-s -- --quit` to have the script close it first.
 
 Or download the `.dmg` for your Mac (`arm64` for Apple silicon, `x64` for
-Intel), open it and drag **AgentRQ Tauri** into Applications.
+Intel), open it and drag **AgentRQ Tauri** into Applications. The build is not
+notarized yet, so macOS refuses to open a copy downloaded with a browser until
+you clear its quarantine flag:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/AgentRQ Tauri.app"
+```
+
+The install script needs no such step.
 
 ### Linux (x64)
 

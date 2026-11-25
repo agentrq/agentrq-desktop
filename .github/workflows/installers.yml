@@ -75,16 +75,13 @@ jobs:
           app="/Applications/AgentRQ Tauri.app"
           [ -d "$app" ] || app="$HOME/Applications/AgentRQ Tauri.app"
           defaults read "$app/Contents/Info" CFBundleShortVersionString
-          ls -la "$app/Contents" "$app/Contents/_CodeSignature" || true
-          codesign -dv --verbose=2 "$app" || true
-          # The copy must carry the same signature the released dmg does.
+          # The installed app must be the released one, byte for byte, and
+          # carry no quarantine flag for Gatekeeper to stop it on.
           dmg=$(gh release view -R agentrq/agentrq-desktop --json assets -q '.assets[].name' | grep -E -- '-arm64\.dmg$' | head -n 1)
           gh release download -R agentrq/agentrq-desktop -p "$dmg" -D "$RUNNER_TEMP"
           hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/mnt" "$RUNNER_TEMP/$dmg" >/dev/null
-          ls -la "$RUNNER_TEMP/mnt/AgentRQ Tauri.app/Contents"
-          echo "released app:"; codesign --verify --deep --verbose=2 "$RUNNER_TEMP/mnt/AgentRQ Tauri.app" || true
-          spctl -a -vv "$RUNNER_TEMP/mnt/AgentRQ Tauri.app" || true
-          echo "installed app:"; codesign --verify --deep --verbose=2 "$app"
+          diff -r "$RUNNER_TEMP/mnt/AgentRQ Tauri.app" "$app"
+          if xattr -r "$app" | grep -q com.apple.quarantine; then echo quarantined; exit 1; fi
 
   windows:
     name: install.ps1 (windows-latest)
@@ -123,7 +120,7 @@ jobs:
             Where-Object { $_.DisplayName -eq 'AgentRQ Tauri' }
           if (-not $entry) { 'no uninstall entry'; exit 1 }
           $entry | Format-List DisplayName, DisplayVersion, InstallLocation
-          $exe = Join-Path $entry.InstallLocation 'agentrq-tauri.exe'
+          $exe = Join-Path $entry.InstallLocation.Trim('"') 'agentrq-tauri.exe'
           if (-not (Test-Path $exe)) { "missing $exe"; exit 1 }
 
       - name: A missing release is an error, not a closed window
