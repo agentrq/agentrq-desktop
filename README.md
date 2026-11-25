@@ -16,6 +16,17 @@ and install it. Once installed, the app updates itself from those releases.
 Every script takes `--version <tag>` (`-Version` on Windows, or
 `AGENTRQ_VERSION` anywhere) to install a given release, and `--help`.
 
+The same installs are on agentrq.com, whose scripts also install the Electron
+app when you leave out the Tauri switch:
+
+```sh
+curl -fsSL https://agentrq.com/install.sh | sh -s -- --tauri          # macOS, Linux
+```
+
+```powershell
+$env:AGENTRQ_TAURI = '1'; irm https://agentrq.com/install.ps1 | iex   # Windows
+```
+
 ### macOS (Apple silicon and Intel)
 
 ```sh
