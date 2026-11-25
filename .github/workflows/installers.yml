@@ -69,11 +69,22 @@ jobs:
 
       - name: Check the install (macOS)
         if: runner.os == 'macOS'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           app="/Applications/AgentRQ Tauri.app"
           [ -d "$app" ] || app="$HOME/Applications/AgentRQ Tauri.app"
           defaults read "$app/Contents/Info" CFBundleShortVersionString
-          codesign --verify --deep "$app"
+          ls -la "$app/Contents" "$app/Contents/_CodeSignature" || true
+          codesign -dv --verbose=2 "$app" || true
+          # The copy must carry the same signature the released dmg does.
+          dmg=$(gh release view -R agentrq/agentrq-desktop --json assets -q '.assets[].name' | grep -E -- '-arm64\.dmg$' | head -n 1)
+          gh release download -R agentrq/agentrq-desktop -p "$dmg" -D "$RUNNER_TEMP"
+          hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/mnt" "$RUNNER_TEMP/$dmg" >/dev/null
+          ls -la "$RUNNER_TEMP/mnt/AgentRQ Tauri.app/Contents"
+          echo "released app:"; codesign --verify --deep --verbose=2 "$RUNNER_TEMP/mnt/AgentRQ Tauri.app" || true
+          spctl -a -vv "$RUNNER_TEMP/mnt/AgentRQ Tauri.app" || true
+          echo "installed app:"; codesign --verify --deep --verbose=2 "$app"
 
   windows:
     name: install.ps1 (windows-latest)
@@ -99,8 +110,10 @@ jobs:
       - name: Run it again (PowerShell 7, as a file)
         shell: pwsh
         run: |
-          ./install.ps1 | Tee-Object -Variable out
-          if (-not ($out -match 'already installed')) { exit 1 }
+          # Write-Host goes to the information stream, not the pipeline.
+          $out = & ./install.ps1 *>&1 | Out-String
+          $out
+          if ($out -notmatch 'already installed') { exit 1 }
 
       - name: Check the install
         shell: pwsh
