@@ -90,6 +90,9 @@
 - **Flatten request bodies in the bridge's `fetch` wrapper.** A Blob or File body
   sent to the `app` scheme segfaults WebKitGTK and arrives empty on WKWebView.
   Same-origin Blob, FormData and stream bodies go as an ArrayBuffer.
+- **The shell cuts an attachment's byte range itself** (core's `byte_range`), from the
+  whole file, and never forwards `Range`: WKWebView plays no audio or video without
+  a 206, and the server ignores `Range`.
 - **Same-origin in the bridge compares scheme and host, never `origin`**: a
   custom scheme's origin is opaque (`"null"`).
 - **Tauri's asset resolver answers `index.html` for any missing path.** Ask the
