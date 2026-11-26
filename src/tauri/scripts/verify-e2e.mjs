@@ -28,7 +28,8 @@ import { printResults, runVerify, skip, summarize } from './lib/report.mjs'
 let backend
 let app
 
-const checksFor = (rootToken) => `(async () => {
+// What the page shows. It changes nothing, so it can run again.
+const PAGE_CHECKS = `(() => {
   const out = [];
   const record = (name, pass, detail) => out.push({ name, pass, detail });
 
@@ -60,6 +61,14 @@ const checksFor = (rootToken) => `(async () => {
   const surfaces = expected.filter((k) => bridge[k]);
   record('desktop bridge exposed', bridge.isDesktop === true && surfaces.length === expected.length,
     'platform ' + bridge.platform + ', surfaces: ' + surfaces.join(', '));
+
+  return out;
+})()`
+
+// What goes over the proxy. It signs in, so it runs once.
+const apiChecksFor = (rootToken) => `(async () => {
+  const out = [];
+  const record = (name, pass, detail) => out.push({ name, pass, detail });
 
   // Relative URL, exactly as src/api.js writes it — no absolute server URL anywhere.
   const anon = await fetch('/api/v1/auth/user');
@@ -122,15 +131,17 @@ await runVerify(
     // The SPA boots, then its router guard sends a signed-out visitor to /login.
     await session.waitForPage('the shared auth guard to route to /login', SETTLED)
 
-    let results = await session.evaluate(checksFor(backend.rootToken))
+    let page = await session.evaluate(PAGE_CHECKS)
     // On CI the window was sometimes caught reloading just after it settled:
-    // wait for it to settle again and check once more. A broken renderer
-    // fails both times.
-    if (results.some((r) => PAGE_STATE.includes(r.name) && !r.pass)) {
+    // wait for it to settle again and read the page once more. A broken
+    // renderer fails both times. Only the page checks repeat: the API checks
+    // sign in, and a second run would find the visitor already signed in.
+    if (page.some((r) => PAGE_STATE.includes(r.name) && !r.pass)) {
       console.log('page was reloading during the checks: checking once more')
       await session.waitForPage('the page to settle again', SETTLED)
-      results = await session.evaluate(checksFor(backend.rootToken))
+      page = await session.evaluate(PAGE_CHECKS)
     }
+    const results = [...page, ...(await session.evaluate(apiChecksFor(backend.rootToken)))]
     printResults(`app proxy against ${backend.url}`, [...results, ...UPDATE_SKIPPED])
     return summarize(results, UPDATE_SKIPPED)
   },
