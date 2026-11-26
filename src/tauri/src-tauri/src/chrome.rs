@@ -729,10 +729,19 @@ pub fn plugins<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_deep_link::init())
-        .plugin(tauri_plugin_opener::init())
+        .plugin(opener())
         .on_window_event(|window, event| {
             crate::shell::handle_window_event(window, event);
         })
+}
+
+/// The opener, for Rust only. Its default script takes every `_blank` link
+/// click into `plugin:opener|open_url`, which no webview may call: the link
+/// did nothing. Such a click is `on_new_window`'s, which vets it.
+fn opener<R: Runtime>() -> impl tauri::plugin::Plugin<R> {
+    tauri_plugin_opener::Builder::new()
+        .open_js_links_on_click(false)
+        .build()
 }
 
 /// Wire desktop shell hooks for shortcuts and deep links. A macOS link
@@ -760,5 +769,23 @@ pub fn install_hooks<R: Runtime>(app: &AppHandle<R>) {
         let _ = app
             .deep_link()
             .register(agentrq_desktop_core::deep_link::DEEP_LINK_SCHEME_TAURI);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tauri::plugin::Plugin;
+    use tauri::test::MockRuntime;
+
+    /// The opener must not put its link-click script in any webview: it would
+    /// take `_blank` clicks from `on_new_window` and call a command the
+    /// capabilities refuse.
+    #[test]
+    fn opener_adds_no_script_to_webviews() {
+        assert!(opener::<MockRuntime>().initialization_script_2().is_none());
+        assert!(tauri_plugin_opener::init::<MockRuntime>()
+            .initialization_script_2()
+            .is_some());
     }
 }

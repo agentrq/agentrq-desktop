@@ -77,6 +77,9 @@
   ACL is all that refuses its calls. Nothing can take the object out. Tauri prepends it
   to every webview with no per-webview switch, and defines it non-configurable. On
   Windows, wry discards the WebView2 script ids, so it cannot be removed natively either.
+- **The opener adds no script to a webview.** Its default one (`init()`) takes
+  every `_blank` click into `plugin:opener|open_url`, which no capability grants: the
+  link did nothing. `on_new_window` routes those clicks; a test in `chrome.rs` holds it.
 - **`window.agentrq` is deep-frozen and non-writable** (`versions` stays mutable until the
   Tauri version resolves), as Electron's contextBridge leaves it. Page code must not be
   able to replace a member.
