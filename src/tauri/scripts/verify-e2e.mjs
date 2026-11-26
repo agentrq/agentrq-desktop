@@ -107,6 +107,12 @@ const UPDATE_SKIPPED = [
   ),
 ]
 
+// The page a check reads: booted, routed to /login and given the bridge.
+const SETTLED = "location.pathname === '/login' && !!document.querySelector('#app')?.children.length && window.agentrq?.isDesktop === true"
+
+// What a reload in flight leaves empty for a moment (#21, Nov 2026 CI).
+const PAGE_STATE = ['renderer mounted', 'desktop bridge exposed']
+
 await runVerify(
   async () => {
     backend = await startBackend()
@@ -114,12 +120,17 @@ await runVerify(
     const { session } = app
 
     // The SPA boots, then its router guard sends a signed-out visitor to /login.
-    await session.waitForPage(
-      'the shared auth guard to route to /login',
-      "location.pathname === '/login' && !!document.querySelector('#app')?.children.length"
-    )
+    await session.waitForPage('the shared auth guard to route to /login', SETTLED)
 
-    const results = await session.evaluate(checksFor(backend.rootToken))
+    let results = await session.evaluate(checksFor(backend.rootToken))
+    // On CI the window was sometimes caught reloading just after it settled:
+    // wait for it to settle again and check once more. A broken renderer
+    // fails both times.
+    if (results.some((r) => PAGE_STATE.includes(r.name) && !r.pass)) {
+      console.log('page was reloading during the checks: checking once more')
+      await session.waitForPage('the page to settle again', SETTLED)
+      results = await session.evaluate(checksFor(backend.rootToken))
+    }
     printResults(`app proxy against ${backend.url}`, [...results, ...UPDATE_SKIPPED])
     return summarize(results, UPDATE_SKIPPED)
   },
