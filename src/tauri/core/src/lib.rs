@@ -10,6 +10,7 @@
 pub mod app_icon;
 pub mod attachment_store;
 pub mod auth;
+pub mod byte_range;
 pub mod deep_link;
 pub mod drawer_frame;
 pub mod emoji_panel;

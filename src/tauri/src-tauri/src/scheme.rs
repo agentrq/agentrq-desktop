@@ -16,13 +16,15 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use agentrq_desktop_core::attachment_store::{should_cache_response, WriteOptions};
+use agentrq_desktop_core::byte_range::{ranged, RANGE_REQUEST_HEADERS};
 use agentrq_desktop_core::drawer_frame::drawer_frame_document;
 use agentrq_desktop_core::protocol::{
     attachment_hit_reply, bad_gateway_reply, dev_failure_message, dev_response_headers,
     dev_unreachable_reply, drawer_code_reply, drawer_frame_reply, filter_request_headers,
     forbidden_reply, not_found_reply, plan_static_request, proxied_response_headers,
     proxy_error_reply, sends_body, serve_from_store, stored_content_disposition, AppProtocol,
-    DrawerLookup, HeaderList, ProxyError, Reply, Route, StaticOutcome, PROXY_TIMEOUT_MS,
+    BytesReply, DrawerLookup, HeaderList, ProxyError, Reply, Route, StaticOutcome,
+    PROXY_TIMEOUT_MS,
 };
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -144,10 +146,20 @@ impl Scheme {
     ) -> Response<Vec<u8>> {
         let method = request.method().clone();
         let cached = serve_from_store(method.as_str(), path);
+        // An attachment is fetched whole and its range cut here (core's
+        // `byte_range`): the server ignores `Range`, and WKWebView plays no
+        // media without a 206.
+        let range = cached
+            .then(|| request.headers().get(http::header::RANGE))
+            .flatten()
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_string);
         if cached {
             if let Some(hit) = net.attachments.read(path) {
-                let reply =
-                    attachment_hit_reply(hit.body, &hit.content_type, &hit.content_disposition);
+                let reply = ranged(
+                    attachment_hit_reply(hit.body, &hit.content_type, &hit.content_disposition),
+                    range.as_deref(),
+                );
                 return respond(reply.status, &reply.headers, reply.body);
             }
         }
@@ -162,6 +174,7 @@ impl Scheme {
             .headers()
             .iter()
             .filter_map(|(name, value)| Some((name.as_str(), value.to_str().ok()?)))
+            .filter(|(name, _)| !(cached && RANGE_REQUEST_HEADERS.contains(name)))
             .collect::<Vec<_>>();
         let out = Outgoing {
             method,
@@ -196,8 +209,17 @@ impl Scheme {
                 },
             );
         }
-        let headers = proxied_response_headers(pairs(&answer.headers));
-        respond(answer.status, &headers, body)
+        let reply = BytesReply {
+            status: answer.status,
+            headers: proxied_response_headers(pairs(&answer.headers)),
+            body,
+        };
+        let reply = if cached {
+            ranged(reply, range.as_deref())
+        } else {
+            reply
+        };
+        respond(reply.status, &reply.headers, reply.body)
     }
 
     async fn dev_server(
@@ -904,6 +926,54 @@ mod tests {
             1,
             "a hit is not forwarded"
         );
+    }
+
+    /// WKWebView plays no audio or video without a 206 for its first
+    /// `bytes=0-1`, and the server ignores `Range`.
+    #[tokio::test]
+    async fn cuts_an_attachment_range_itself_from_the_whole_file() {
+        let server = TestServer::start(png).await;
+        let rig = rig(&server.url, "");
+        let ranged = |uri: &str, range: &str| {
+            let mut request = request("GET", uri, b"");
+            request
+                .headers_mut()
+                .insert("range", HeaderValue::from_str(range).unwrap());
+            request
+                .headers_mut()
+                .insert("if-range", HeaderValue::from_static("x"));
+            rig.scheme.handle(MAIN_WEBVIEW, request)
+        };
+
+        let miss = ranged(ATTACHMENT, "bytes=0-1").await;
+        assert_eq!(miss.status(), 206);
+        assert_eq!(body(&miss), "PN");
+        assert_eq!(header(&miss, "content-range"), Some("bytes 0-1/3"));
+        assert_eq!(header(&miss, "accept-ranges"), Some("bytes"));
+        assert_eq!(header(&miss, "content-type"), Some("image/png"));
+        assert_eq!(server.requests()[0].header("range"), None);
+        assert_eq!(server.requests()[0].header("if-range"), None);
+
+        let hit = ranged(ATTACHMENT, "bytes=1-").await;
+        assert_eq!(hit.status(), 206);
+        assert_eq!(body(&hit), "NG");
+        assert_eq!(header(&hit, "content-range"), Some("bytes 1-2/3"));
+        assert_eq!(header(&hit, "x-content-type-options"), Some("nosniff"));
+        assert_eq!(ranged(ATTACHMENT, "bytes=3-").await.status(), 416);
+        assert_eq!(
+            header(&get(&rig, ATTACHMENT).await, "accept-ranges"),
+            Some("bytes")
+        );
+        assert_eq!(
+            server.requests().len(),
+            1,
+            "every range came from the store"
+        );
+
+        let other = ranged("/api/v1/x", "bytes=0-1").await;
+        assert_eq!(other.status(), 200);
+        assert_eq!(header(&other, "accept-ranges"), None);
+        assert_eq!(server.requests()[1].header("range"), Some("bytes=0-1"));
     }
 
     #[tokio::test]
