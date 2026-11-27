@@ -238,6 +238,9 @@
 - **Drag regions are `data-tauri-drag-region="deep"`, and `="false"` on every
   `.app-no-drag`.** A bare attribute drags from that element only, not from the
   title text inside it, and a no-drag card of plain divs would drag without `"false"`.
+- **Every webview that shows a page is built with `disable_drag_drop_handler()`.**
+  Tauri's handler is on by default and takes every dropped file, so the page's
+  `drop` never fires: no attachment can be dropped on the chat box.
 - **Never use `tauri-plugin-window-state`.** Its clamping differs from
   `core::window_state`. The save is read when the debounce fires, never per
   resize event: a platform can report the maximized size before the state.

@@ -113,6 +113,7 @@ CI's `Verify scripts` job).
 | Folder chooser | — | M31 | M31 | M31 |
 | Native emoji panel | `core::emoji_panel` | A (unit: answers `false`) | M32 | M32 |
 | Dictation (microphone) | — | M33 | M33 | M33 |
+| Files dropped on the chat box, the new task box and a panel site | — | M48 | M48 | M48 |
 
 ### Window, menu and keys
 
@@ -440,3 +441,6 @@ screenshots, in the PR or task that ran the checklist.
       `navigator.permissions.query({name: 'notifications'})` read `denied`,
       `requestPermission()` resolves `denied` with no bar, nothing shows, and
       an `<iframe>` in the page reads the same.
+48. Drag a file from the file manager onto a task's chat box and onto the new
+    task box: each attaches it, as a click on the paperclip would. Drop one on
+    a site in the side panel that takes uploads: the site gets it.

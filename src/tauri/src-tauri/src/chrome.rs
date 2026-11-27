@@ -223,6 +223,8 @@ pub fn open_main_window<R: Runtime>(app: &AppHandle<R>, profile: &str) -> tauri:
         )
         .visible(false)
         .background_color(background)
+        // Tauri's own handler takes every dropped file, so the page never sees it.
+        .disable_drag_drop_handler()
         .on_page_load(move |window, payload| {
             main_page_load(window.app_handle(), &payload.event());
             if let tauri::webview::PageLoadEvent::Finished = payload.event() {
