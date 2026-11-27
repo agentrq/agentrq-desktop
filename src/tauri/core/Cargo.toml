@@ -1,6 +1,6 @@
 [package]
 name = "agentrq-desktop-core"
-version = "0.19.11"
+version = "0.19.12"
 edition = "2021"
 license = "AGPL-3.0-only"
 description = "Pure logic of the AgentRQ desktop app, with no Tauri dependency"
