@@ -566,7 +566,9 @@ pub async fn side_panel_guest_open<R: Runtime>(
             NO_NOTIFICATIONS,
         ))
         // White, as a browser's canvas is.
-        .background_color(tauri::window::Color(255, 255, 255, 255));
+        .background_color(tauri::window::Color(255, 255, 255, 255))
+        // A site gets the files dropped on it, as in a browser.
+        .disable_drag_drop_handler();
     let builder = handlers::attach(builder, guest);
     let profile = app.state::<Arc<Network>>().active_id();
     let builder = platform::isolate(builder, panel_dir(&app, &profile), &profile);
